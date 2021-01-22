@@ -2,8 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import MicRecorder from './mic-recorder';
 import * as Tone from 'tone';
 
-console.log(Tone.Context.rawContext);
-
 const createPlayer = async (audioFile) => {
     return new Promise((res, rej) => {
         const player = new Tone.Player(audioFile, () => {
@@ -27,18 +25,7 @@ export const Recorder = () => {
     useEffect(() => {
         rec.current = new MicRecorder();
 
-        rec.current.build(url => {
-            createPlayer(url)
-            .then(player => {
-
-                player.sync().start(0);
-
-                setTracks(tracks => [...tracks, {
-                    title: `Track ${tracks.length + 1}`,
-                    player
-                }]);
-            });
-        })
+        rec.current.build()
         .then(() => {
             setAllowed(true);
             setError(null);
@@ -51,19 +38,33 @@ export const Recorder = () => {
 
 
     const recordStartClick = () => {
-        setRecording(true);
-        rec.current.start();
-        startTracks();
+        console.log('STARTED IN HOOK', new Date(Date.now()).toISOString());
+        rec.current.start().then(() => {
+            setRecording(true);
+            console.log('STARTED PLAYING TRACKS', new Date(Date.now()).toISOString());
+            startTracks();
+        });
     }
 
     const recordStopClick = () => {
         setRecording(false);
         stopTracks();
-        rec.current.stop();
+        rec.current.stop().then(url => {
+            createPlayer(url)
+            .then(player => {
+
+                player.sync().start(0);
+
+                setTracks(tracks => [...tracks, {
+                    title: `Track ${tracks.length + 1}`,
+                    player
+                }]);
+            });
+        });
     }
 
     const startTracks = () => {
-        Tone.Transport.stop();
+        // Tone.Transport.stop();
         setPlaying(true);
         Tone.Transport.start();
     }

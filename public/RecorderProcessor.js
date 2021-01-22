@@ -2,21 +2,16 @@ class Processor extends AudioWorkletProcessor {
 
     constructor(options) {
         super();
-        // console.log('Processor Constructed', this);
 
         this.buffer = [];
 
+        // We'll only recieve a message when the recording should stop
+        // Send all the audio data off to the main thread to get processed, then clear the buffer
         this.port.onmessage = e => {
-            
-            if (e.data.type === 'start') {
-                console.log('STARTED', e.data);
-            }
-            
-            // Send all the audio data off to the main thread to get processed
-            if (e.data.type === 'stop') {
-                this.port.postMessage(this.buffer);
-                this.buffer = [];
-            }
+        
+            this.port.postMessage(this.buffer);
+            this.buffer = [];
+          
         }
     }
 
@@ -53,6 +48,11 @@ class Processor extends AudioWorkletProcessor {
     // }
 
     process(inputs, outputs, params) {
+    
+        // if (!this.buffer.length) {
+        //     console.log('STARTED PROCESSING', new Date(Date.now()).toISOString());
+        // }
+        console.log(this.buffer.length);
 
         for (let input of inputs) {
             for (let i in input) {
