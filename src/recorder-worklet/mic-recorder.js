@@ -4,6 +4,12 @@ export default class MicRecorder {
 
     constructor(config) {
 
+        this.config = {
+            audio: {
+                echoCancellation: false
+            }
+        }
+
         this.context = new(window.AudioContext || window.webkitAudioContext)();
 
         console.log(this.context);
@@ -12,15 +18,14 @@ export default class MicRecorder {
         this.processor = null;
         this.analyser = null;
         this.stream = null;
-        this.finished = false;
 
-        this.file = null;
+        Object.assign(this.config, config);
     }
 
-    async build() {
+    async build(onStop) {
      
         await this.context.audioWorklet.addModule('RecorderProcessor.js');
-        this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        this.stream = await navigator.mediaDevices.getUserMedia({ audio: this.config.audio });
 
         // FOR CHROME specifically. Chrome requires a user interaction to create a new context. This works around that.
         if (this.context.state === 'suspended') {
@@ -30,7 +35,7 @@ export default class MicRecorder {
         this.mic = this.context.createMediaStreamSource(this.stream);
         this.processor = new AudioWorkletNode(this.context, 'processor', {
             processorOptions: {
-                example: 'hello'
+                example: 'hello',
             }
         });
         // we don't NEED the analyser node to record, but it might be nice to look at the data
@@ -38,63 +43,81 @@ export default class MicRecorder {
         
         this.processor.port.onmessage = e => {
 
-            const sampleData = e.data;
+            console.log('PRE PROCESSED', new Date(Date.now()).toISOString());
+            
+            const audioChannels = e.data;
 
-            console.log('SAMPLE DATA', sampleData);
-
-            let sumOfLengths = sampleData[0].length * sampleData.length;
-
-            let samples = new Int16Array(sumOfLengths);
-
-            let currentIndex = 0;
-            for (let arr of sampleData) {
-                samples.set(arr, currentIndex);
-                currentIndex += arr.length;
+            const numChannels = audioChannels.length;
+            
+            
+            for (let i in audioChannels) {
+                
+                const sampleData = audioChannels[i];
+                
+                // the sum of lengths of all frames of audio
+                let sumOfLengths = sampleData[0].length * sampleData.length;
+                let mergedSamples = new Int16Array(sumOfLengths);
+                
+                let currentIndex = 0;
+                for (let arr of sampleData) {
+                    mergedSamples.set(arr, currentIndex);
+                    currentIndex += arr.length;
+                }
+                audioChannels[i] = mergedSamples;
             }
-
-            console.log('MERGED SAMPLES', samples);
+            
+            console.log('CHANNELS', audioChannels);
 
             let mp3Data = [];
             const sampleBlockSize = 1152;
-            const encoder = new Mp3Encoder(1, this.context.sampleRate, 128);
+            const encoder = new Mp3Encoder(numChannels, this.context.sampleRate, 128);
 
-            for (let i = 0; i < samples.length; i += sampleBlockSize) {
-                const sampleChunk = samples.subarray(i, i + sampleBlockSize);
-                const mp3Buf = encoder.encodeBuffer(sampleChunk);
+            const sampleLength = Math.min(audioChannels[0].length, audioChannels[1].length);
+
+            for (let i = 0; i < sampleLength; i += sampleBlockSize) {
+
+                const audioChunks = audioChannels.map(sampleArray => sampleArray.subarray(i, i + sampleBlockSize));
+
+                const mp3Buf = encoder.encodeBuffer(...audioChunks);
 
                 if (mp3Buf.length > 0) {
                     mp3Data.push(mp3Buf);
                 }
             }
 
+            // get the last of the buffer that is smaller than our sample block size
             const mp3Buf = encoder.flush();
 
-            if (mp3Buf.length > 0) {
-                mp3Data.push(new Int8Array(mp3Buf));
-            }
+            console.log('LAST BUF', mp3Buf)
 
+            if (mp3Buf.length > 0) {
+                mp3Data.push(mp3Buf);
+            }
+        
             const blob = new Blob(mp3Data, { type: 'audio/mp3' });
             
-            this.file = new File(mp3Data, 'music.mp3', {
+            const file = new File(mp3Data, 'music.mp3', {
                 type: blob.type,
                 lastModified: Date.now()
             });
             
             console.log('WE MADE A FILE');
 
-            const player = new Audio(URL.createObjectURL(this.file));
+            const fileURL = URL.createObjectURL(file);
+            const player = new Audio(fileURL);
             player.controls = true;
+
+            onStop(fileURL);
 
             document.querySelector('#root').appendChild(player);
 
-            this.file = null;
+            console.log('POST PROCESSED', new Date(Date.now()).toISOString());
         }
     }
 
     start() {
         this.processor.port.postMessage({
-            type: 'start',
-            // encoder: new Encoder()
+            type: 'start'        
         });
     
         this.mic.connect(this.processor);

@@ -2,18 +2,17 @@ class Processor extends AudioWorkletProcessor {
 
     constructor(options) {
         super();
-        console.log('Processor Constructed');
+        // console.log('Processor Constructed', this);
 
         this.buffer = [];
 
-        // The processor will only receive messages on stop. When that happens,
-        // Send all the audio data off to the main thread to get processed
         this.port.onmessage = e => {
-
+            
             if (e.data.type === 'start') {
                 console.log('STARTED', e.data);
             }
             
+            // Send all the audio data off to the main thread to get processed
             if (e.data.type === 'stop') {
                 this.port.postMessage(this.buffer);
                 this.buffer = [];
@@ -36,36 +35,42 @@ class Processor extends AudioWorkletProcessor {
     }
 
 
+    // process(inputs, outputs, params) {
+
+    //     // get the first and only input that we'll expect
+    //     const firstInput = inputs[0];
+    //     // get the sample data from the firstInput's first channel, we expect this to be a Float32Array
+    //     const sampleData = firstInput[0];
+
+    //     if (sampleData) {
+    //         const i16samples = this.floatTo16BitPCM(sampleData);
+
+    //         this.buffer.push(i16samples);
+    //     }
+        
+
+    //     return true;
+    // }
+
     process(inputs, outputs, params) {
 
-        // get the first and only input that we'll expect
-        const firstInput = inputs[0];
-        // get the channel data from the first input, we expect this to be a Float32Array
-        const inputData = firstInput[0];
+        for (let input of inputs) {
+            for (let i in input) {
+                const sampleData = input[i];
 
-        if (inputData) {
-            const i16samples = this.floatTo16BitPCM(inputData);
+                const i16SampleData = this.floatTo16BitPCM(sampleData);
 
-            this.buffer.push(i16samples);
+                if (this.buffer[i]) {
+                    this.buffer[i].push(i16SampleData);
+                } else {
+                    this.buffer[i] = [];
+                    this.buffer[i].push(i16SampleData);
+                }
+            }
         }
 
         return true;
     }
-
-    // // the process function we use to play audio, works nicely
-    // process(inputs, outputs, params) {
-
-    //     // for a stereo input, input is an array of 2 float 32 arrays, 1 for each channel
-    //     // those float32 arrays are all 128 floats long 
-    //     const input = inputs[0];
-    //     const output = outputs[0];
-
-    //     for (let channel = 0; channel < input.length; ++channel) {
-    //         output[channel].set(input[channel]);
-    //     }
-    
-    //     return true;
-    // }
 }
 
 registerProcessor('processor', Processor);
