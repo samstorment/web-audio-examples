@@ -38,21 +38,21 @@ export const Recorder = () => {
 
 
     const recordStartClick = () => {
-        console.log('STARTED IN HOOK', new Date(Date.now()).toISOString());
+        console.log('1) STARTED IN COMPONENT', new Date(Date.now()).toISOString());
         rec.current.start().then(() => {
             setRecording(true);
-            console.log('STARTED PLAYING TRACKS', new Date(Date.now()).toISOString());
+            console.log('4) RIGHT BEFORE TRACKS START', new Date(Date.now()).toISOString());
             startTracks();
+            console.log('5) STARTED PLAYING TRACKS', new Date(Date.now()).toISOString());
         });
     }
 
     const recordStopClick = () => {
         setRecording(false);
         stopTracks();
-        rec.current.stop().then(url => {
-            createPlayer(url)
+        rec.current.stop()
+            .then(url => createPlayer(url))
             .then(player => {
-
                 player.sync().start(0);
 
                 setTracks(tracks => [...tracks, {
@@ -60,7 +60,9 @@ export const Recorder = () => {
                     player
                 }]);
             });
-        });
+
+            
+          
     }
 
     const startTracks = () => {
