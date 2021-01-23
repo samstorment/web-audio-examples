@@ -7,7 +7,6 @@ export default class MicRecorder {
         this.context = new(window.AudioContext || window.webkitAudioContext)({
             latencyHint: 'interactive'
         });
-        
 
         this.config = {
             audio: {
@@ -16,7 +15,7 @@ export default class MicRecorder {
                 autoGainControl: false,
                 latency: 0
             },
-            trimStart: .2,
+            trimStart: 0,
             trimEnd: 0
         }
 
@@ -52,10 +51,10 @@ export default class MicRecorder {
     async stop() {
 
         this.mic.disconnect(this.processor);
-        console.log('6) TOLD PROCESSOR TO STOP', new Date(Date.now()).toISOString());
+
         this.processor.port.postMessage('stop');
 
-        await this.context.suspend();
+        // await this.context.suspend();
 
         return new Promise((resolve, reject) => {
             this.processor.port.onmessage = e => {
@@ -66,7 +65,7 @@ export default class MicRecorder {
         
     }
 
-    // creates mp3 from the array of audi channel data
+    // creates mp3 from the array of audio channel data
     createMp3(audioChannels) {
 
         const numChannels = audioChannels.length;

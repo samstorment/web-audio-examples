@@ -10,7 +10,6 @@ class Processor extends AudioWorkletProcessor {
         // Send all the audio data off to the main thread to get processed, then clear the buffer
         this.port.onmessage = e => {
         
-            
             if (e.data === 'stop') {   
                 this.recording = false;
                 console.log('7) PROCESSOR STOPPED', new Date(Date.now()).toISOString());
