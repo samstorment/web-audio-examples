@@ -41,8 +41,6 @@ export const Recorder = () => {
         rec.current.start()
         .then(() => {
 
-            console.log(Tone.now());
-
             setRecording(true);
             startTracks();
 
