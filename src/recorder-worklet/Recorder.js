@@ -38,18 +38,19 @@ export const Recorder = () => {
 
 
     const recordStartClick = () => {
-        console.log('1) STARTED IN COMPONENT', new Date(Date.now()).toISOString());
-        rec.current.start().then(() => {
+        rec.current.start()
+        .then(() => {
 
-            
+            console.log(Tone.now());
+
             setRecording(true);
-            console.log('4) RIGHT BEFORE TRACKS START', new Date(Date.now()).toISOString());
             startTracks();
-            console.log('5) STARTED PLAYING TRACKS', new Date(Date.now()).toISOString());
-            console.log('@@@ TRANS TIME', Tone.Transport.context.now());
+
+            console.log('@@@ TRANS SECONDS', Tone.Transport.seconds);
+            console.log('@@@ TRANS TIME', Tone.now());
             console.log('@@@ RECOR TIME', rec.current.context.currentTime);
 
-            const trimStart = Tone.Transport.context.now() - rec.current.context.currentTime;
+            const trimStart = Tone.now() - rec.current.context.currentTime;
             console.log(trimStart);
 
             rec.current.config.trimStart = trimStart;

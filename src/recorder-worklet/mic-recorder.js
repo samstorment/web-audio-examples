@@ -39,13 +39,10 @@ export default class MicRecorder {
         // can pass a third argument, an object with a processorOptions object to give the constructor custom initialization data https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletNode/AudioWorkletNode
         this.processor = new AudioWorkletNode(this.context, 'processor');
 
-        
         this.mic.connect(this.processor);
         // this.processor.connect(this.context.destination);
 
         this.processor.port.postMessage('start');
-
-        console.log('2) TOLD PROCESSOR TO START', new Date(Date.now()).toISOString());
     }
 
     async stop() {

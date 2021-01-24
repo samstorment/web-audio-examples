@@ -12,14 +12,12 @@ class Processor extends AudioWorkletProcessor {
         
             if (e.data === 'stop') {   
                 this.recording = false;
-                console.log('7) PROCESSOR STOPPED', new Date(Date.now()).toISOString());
                 this.port.postMessage(this.buffer);
                 this.buffer = [];
             }
 
             if (e.data === 'start') {
                 this.recording = true;
-                console.log('3) PROCESSOR STARTED', new Date(Date.now()).toISOString());
             }
           
         }
@@ -60,10 +58,6 @@ class Processor extends AudioWorkletProcessor {
     process(inputs, outputs, params) {
 
         if (!this.recording) { return; }
-    
-        if (this.buffer.length === 0) {
-            console.log('STARTED PROCESSING', new Date(Date.now()).toISOString());
-        }
 
         for (let input of inputs) {
             for (let i in input) {
