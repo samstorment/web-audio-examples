@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import MicRecorder from './mic-recorder';
 import * as Tone from 'tone';
 
+
 const createPlayer = async (audioFile) => {
     return new Promise((res, rej) => {
         const player = new Tone.Player(audioFile, () => {
@@ -25,6 +26,7 @@ export const Recorder = () => {
     useEffect(() => {
         rec.current = new MicRecorder();
 
+
         rec.current.build()
         .then(() => {
             setAllowed(true);
@@ -44,11 +46,13 @@ export const Recorder = () => {
             setRecording(true);
             startTracks();
 
-            console.log('@@@ TRANS SECONDS', Tone.Transport.seconds);
-            console.log('@@@ TRANS TIME', Tone.now());
+            
+            console.log('@@@ RECOR LATENCY', rec.current.context.outputLatency);
+            console.log('@@@ TRANS TIME', Tone.Transport.context.now());
             console.log('@@@ RECOR TIME', rec.current.context.currentTime);
 
-            const trimStart = Tone.now() - rec.current.context.currentTime;
+            // const trimStart = Tone.Transport.context.now() - rec.current.context.currentTime;
+            const trimStart = (Tone.Transport.context.now() - Tone.Transport.immediate() + .3) / 2;
             console.log(trimStart);
 
             rec.current.config.trimStart = trimStart;
